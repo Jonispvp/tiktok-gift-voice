@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gift Voice</title>
+<style>
+body { background:#111; color:white; font-family:Arial; text-align:center; }
+select,button{padding:10px;margin:10px;font-size:16px;}
+li{font-size:22px;margin:10px;}
+</style>
+</head>
+<body>
+
+<h2>🎁 Leitor de Presentes</h2>
+
+<select id="voiceSelect"></select>
+<button onclick="ativarAudio()">Ativar Voz</button>
+
+<ul id="gifts"></ul>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const giftList = document.getElementById("gifts");
+const voiceSelect = document.getElementById("voiceSelect");
+
+let selectedVoice;
+let voices=[];
+
+function loadVoices(){
+ voices=speechSynthesis.getVoices();
+ voiceSelect.innerHTML="";
+ voices.forEach((v,i)=>{
+   let option=document.createElement("option");
+   option.value=i;
+   option.textContent=v.name+" ("+v.lang+")";
+   voiceSelect.appendChild(option);
+ });
+}
+
+speechSynthesis.onvoiceschanged=loadVoices;
+loadVoices();
+
+voiceSelect.addEventListener("change",()=>{
+ selectedVoice=voices[voiceSelect.value];
+});
+
+function ativarAudio(){
+ let test=new SpeechSynthesisUtterance("Voz ativada");
+ if(selectedVoice) test.voice=selectedVoice;
+ speechSynthesis.speak(test);
+}
+
+socket.on("gift",data=>{
+ let li=document.createElement("li");
+ li.textContent=`${data.username} enviou ${data.repeatCount}x ${data.giftName}`;
+ giftList.appendChild(li);
+
+ let speech=new SpeechSynthesisUtterance(
+   `${data.username} enviou ${data.repeatCount} ${data.giftName}`
+ );
+
+ if(selectedVoice) speech.voice=selectedVoice;
+
+ speechSynthesis.speak(speech);
+});
+</script>
+
+</body>
+</html>
